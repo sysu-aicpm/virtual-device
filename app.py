@@ -5,6 +5,7 @@ import config
 from device.devices import Refrigerator, Light, Lock, Camera
 import random
 import time
+from device.base_device import BaseDevice
 
 app = Flask(__name__)
 
@@ -16,13 +17,14 @@ DEVICE_MAPPING = {
     'camera': Camera
 }
 
-device = None
+device:BaseDevice = None
 
 def init_device():
     global device
     device_class = DEVICE_MAPPING.get(config.DEVICE_TYPE.lower())
     if device_class:
-        device = device_class(str(uuid.uuid4()))
+        device = device_class(str(uuid.uuid4()),config.HOST,config.PORT)
+        device.start_ssdp_service()
         device.start_heartbeat(config.CONTROLLER_URL, config.HEARTBEAT_INTERVAL)
     else:
         raise ValueError(f"不支持的设备类型: {config.DEVICE_TYPE}")

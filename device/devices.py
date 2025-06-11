@@ -1,8 +1,8 @@
 from .base_device import BaseDevice
 
 class Refrigerator(BaseDevice):
-    def __init__(self, device_id):
-        super().__init__(device_id, "refrigerator")
+    def __init__(self, device_id,ip_addr,ip_port):
+        super().__init__(device_id, "refrigerator",ip_addr,ip_port)
         self.temperature = 4  # 默认温度4℃
         self.door_open = False
         self.power = 100  # 默认功耗100W
@@ -16,8 +16,8 @@ class Refrigerator(BaseDevice):
         return False
 
 class Light(BaseDevice):
-    def __init__(self, device_id):
-        super().__init__(device_id, "light")
+    def __init__(self, device_id,ip_addr,ip_port):
+        super().__init__(device_id, "light",ip_addr,ip_port)
         self.brightness = 0  # 亮度0-100
         self.power = 10  # 默认功耗10W
 
@@ -43,8 +43,8 @@ class Light(BaseDevice):
         return False
 
 class Lock(BaseDevice):
-    def __init__(self, device_id):
-        super().__init__(device_id, "lock")
+    def __init__(self, device_id,ip_addr,ip_port):
+        super().__init__(device_id, "lock",ip_addr,ip_port)
         self.locked = True
         self.power = 5  # 默认功耗5W
 
@@ -58,8 +58,8 @@ class Lock(BaseDevice):
         return False
 
 class Camera(BaseDevice):
-    def __init__(self, device_id):
-        super().__init__(device_id, "camera")
+    def __init__(self, device_id,ip_addr,ip_port):
+        super().__init__(device_id, "camera",ip_addr,ip_port)
         self.recording = False
         self.resolution = "1080p"
         self.power = 15  # 默认功耗15W
