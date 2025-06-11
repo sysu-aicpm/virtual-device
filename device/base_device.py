@@ -98,7 +98,7 @@ class BaseDevice(ABC):
             "status": self.status,
             "timestamp": datetime.now().isoformat()
         }
-        requests.post(f"{controller_url}/heartbeat", json=data)
+        requests.post(f"{controller_url}/devices/heartbeat", json=data)
 
     def get_info(self, keys):
         """获取设备信息"""
