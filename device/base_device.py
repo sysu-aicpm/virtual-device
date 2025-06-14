@@ -37,7 +37,7 @@ class BaseDevice(ABC):
                 except Exception as e:
                     print(f"心跳发送失败: {e}")
                     # 发送失败时设置状态为error
-                    self.status = "error"
+                    # self.status = "error"
                     time.sleep(1)
 
         self._heartbeat_thread = threading.Thread(target=_heartbeat)
@@ -85,7 +85,7 @@ class BaseDevice(ABC):
             except Exception as e:
                 print(f"SSDP 服务异常: {e}")
                 # SSDP服务异常时设置状态为error
-                self.status = "error"
+                # self.status = "error"
         
         # 在单独线程中启动 SSDP 服务
         self._ssdp_thread = threading.Thread(target=_ssdp_service)
