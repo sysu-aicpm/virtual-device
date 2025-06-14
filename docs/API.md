@@ -24,7 +24,7 @@
     "device_id": "550e8400-e29b-41d4-a716-446655440000",
     "device_type": "refrigerator",
     "power": 100,
-    "status": "on",
+    "status": "online",
     "temperature": 4
 }
 ```
@@ -52,6 +52,15 @@
     "action": "set_temperature",
     "params": {
         "temperature": 4  // 范围：-20到10℃
+    }
+}
+```
+或
+```json
+{
+    "action": "switch",
+    "params": {
+        "state": "on"  // "on" 或 "off"
     }
 }
 ```
@@ -106,81 +115,87 @@
 
 ## 设备主动发送的数据包
 
-### 1. 心跳包
+### 心跳包（包含设备事件）
 
 **请求**
-- URL：`{CONTROLLER_URL}/heartbeat`
+- URL：`{CONTROLLER_URL}/api/v1/devices/heartbeat/`
 - 方法：POST
 - Content-Type: application/json
 - 请求体：
 ```json
 {
-    "device_id": "550e8400-e29b-41d4-a716-446655440000",
-    "device_type": "refrigerator",
-    "status": "on",
-    "timestamp": "2024-03-20T10:30:00.000Z"
+    "device_identifier": "550e8400-e29b-41d4-a716-446655440000",
+    "timestamp": "2024-03-20T10:30:00.000Z",
+    "status": "online",
+    "data": {
+        "current_power_consumption": 102.5,
+        "temperature_change": {
+            "temperature": 4.2
+        },
+        "door_state_change": {
+            "door_open": true
+        }
+    }
 }
 ```
 
-### 2. 事件通知
+**设备状态说明**
+- `online`: 设备在线正常工作
+- `offline`: 设备离线
+- `error`: 设备出现错误
 
-**请求**
-- URL：`{CONTROLLER_URL}/event`
-- 方法：POST
-- Content-Type: application/json
-
-**各设备支持的事件：**
+**各设备事件数据字段**
 
 #### 冰箱
 ```json
 {
-    "device_id": "550e8400-e29b-41d4-a716-446655440000",
-    "device_type": "refrigerator",
-    "event_type": "door_state_change",
-    "event_data": {
+    "door_state_change": {
         "door_open": true
     },
-    "timestamp": "2024-03-20T10:30:00.000Z"
+    "temperature_change": {
+        "temperature": 4.2
+    },
+    "power_state_change": {
+        "power_state": "on"
+    }
 }
 ```
 
 #### 灯
 ```json
 {
-    "device_id": "550e8400-e29b-41d4-a716-446655440000",
-    "device_type": "light",
-    "event_type": "state_change",
-    "event_data": {
-        "status": "on",
-        "brightness": 100
+    "brightness_change": {
+        "brightness": 80
     },
-    "timestamp": "2024-03-20T10:30:00.000Z"
+    "power_state_change": {
+        "power_state": "on"
+    }
 }
 ```
 
 #### 门锁
 ```json
 {
-    "device_id": "550e8400-e29b-41d4-a716-446655440000",
-    "device_type": "lock",
-    "event_type": "lock_state_change",
-    "event_data": {
-        "locked": true
+    "lock_state_change": {
+        "lock_state": "locked"
     },
-    "timestamp": "2024-03-20T10:30:00.000Z"
+    "battery_level": {
+        "battery": 95.5
+    }
 }
 ```
 
 #### 摄像头
 ```json
 {
-    "device_id": "550e8400-e29b-41d4-a716-446655440000",
-    "device_type": "camera",
-    "event_type": "recording_state_change",
-    "event_data": {
-        "recording": true,
+    "camera_state": {
+        "camera_state": "recording"
+    },
+    "resolution_change": {
         "resolution": "1080p"
     },
-    "timestamp": "2024-03-20T10:30:00.000Z"
+    "storage_usage": {
+        "storage_used_mb": 250
+    }
 }
 ``` 

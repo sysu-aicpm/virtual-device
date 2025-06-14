@@ -1,19 +1,20 @@
 # 虚拟智能家居设备模拟器
 
-这个项目模拟了各种智能家居设备的网络接口，支持HTTP API调用和自动事件生成。每个设备都会定期发送心跳包，并随机触发状态改变事件。
+这个项目模拟了各种智能家居设备的网络接口，支持HTTP API调用和自动事件生成。每个设备都会定期发送包含设备状态和事件数据的心跳包。
 
 ## 功能特性
 
 1. 支持多种设备类型
    - 冰箱（温度控制、门状态监控）
    - 智能灯（亮度调节、开关控制）
-   - 门锁（锁定/解锁控制）
-   - 摄像头（录制控制、分辨率设置）
+   - 门锁（锁定/解锁控制、电池监控）
+   - 摄像头（录制控制、分辨率设置、存储监控）
 
 2. 自动行为
    - 定期发送心跳包（默认5秒）
    - 随机生成设备状态改变事件
-   - 自动更新设备功耗
+   - 动态模拟设备功耗变化
+   - 设备状态管理（online/offline/error）
 
 3. HTTP API接口
    - 设备状态查询
@@ -47,8 +48,9 @@ python app.py
 
 **自动行为：**
 - 每5-15秒有30%概率随机开关冰箱门
-- 开门时发送 door_state_change 事件
-- 默认功耗100W
+- 每5-15秒有20%概率随机温度波动
+- 温度越低，功耗越大
+- 默认功耗100W（动态波动±10%）
 
 **API控制：**
 ```bash
@@ -60,11 +62,19 @@ curl -X POST http://localhost:5000/control \
            "params": {"temperature": 4}
          }'
 
+# 开关控制
+curl -X POST http://localhost:5000/control \
+     -H "Content-Type: application/json" \
+     -d '{
+           "action": "switch",
+           "params": {"state": "on"}
+         }'
+
 # 查询状态
 curl -X POST http://localhost:5000/query \
      -H "Content-Type: application/json" \
      -d '{
-           "keys": ["temperature", "door_open", "power", "status"]
+           "keys": ["temperature", "door_open", "power", "status", "power_state"]
          }'
 ```
 
@@ -73,7 +83,7 @@ curl -X POST http://localhost:5000/query \
 **自动行为：**
 - 每5-15秒有20%概率随机调节亮度
 - 亮度改变时自动调整功耗
-- 功耗随亮度变化（0-10W）
+- 功耗随亮度变化（0-10W，动态波动±10%）
 
 **API控制：**
 ```bash
@@ -97,7 +107,7 @@ curl -X POST http://localhost:5000/control \
 curl -X POST http://localhost:5000/query \
      -H "Content-Type: application/json" \
      -d '{
-           "keys": ["brightness", "power", "status"]
+           "keys": ["brightness", "power", "status", "power_state"]
          }'
 ```
 
@@ -105,8 +115,9 @@ curl -X POST http://localhost:5000/query \
 
 **自动行为：**
 - 每5-15秒有15%概率随机切换锁定状态
-- 状态改变时发送 lock_state_change 事件
-- 固定功耗5W
+- 每5-15秒有10%概率电池电量减少
+- 锁定/解锁操作消耗电池电量
+- 固定功耗5W（动态波动±10%）
 
 **API控制：**
 ```bash
@@ -122,7 +133,7 @@ curl -X POST http://localhost:5000/control \
 curl -X POST http://localhost:5000/query \
      -H "Content-Type: application/json" \
      -d '{
-           "keys": ["locked", "status", "power"]
+           "keys": ["locked", "lock_state", "battery", "status", "power"]
          }'
 ```
 
@@ -131,7 +142,8 @@ curl -X POST http://localhost:5000/query \
 **自动行为：**
 - 每5-15秒有25%概率随机开始/停止录制
 - 每5-15秒有10%概率随机切换分辨率
-- 待机功耗15W，录制时功耗25W
+- 录制时持续增加存储使用量
+- 待机功耗15W，录制时功耗25W（动态波动±10-20%）
 
 **API控制：**
 ```bash
@@ -155,36 +167,35 @@ curl -X POST http://localhost:5000/control \
 curl -X POST http://localhost:5000/query \
      -H "Content-Type: application/json" \
      -d '{
-           "keys": ["recording", "resolution", "power", "status"]
+           "keys": ["recording", "resolution", "power", "status", "camera_state", "storage_used"]
          }'
 ```
 
-## 事件通知
+## 心跳包数据格式
 
-所有设备都会向控制器发送以下类型的数据：
+设备会定期向控制器发送心跳包，包含设备状态和事件数据：
 
-1. 心跳包（每5秒）：
 ```json
 {
-    "device_id": "550e8400-e29b-41d4-a716-446655440000",
-    "device_type": "refrigerator",
-    "status": "on",
-    "timestamp": "2024-03-20T10:30:00.000Z"
+    "device_identifier": "550e8400-e29b-41d4-a716-446655440000",
+    "timestamp": "2024-03-20T10:30:00.000Z",
+    "status": "online",
+    "data": {
+        "current_power_consumption": 102.5,
+        "door_state_change": {
+            "door_open": true
+        },
+        "temperature_change": {
+            "temperature": 4.2
+        }
+    }
 }
 ```
 
-2. 状态改变事件：
-```json
-{
-    "device_id": "550e8400-e29b-41d4-a716-446655440000",
-    "device_type": "refrigerator",
-    "event_type": "door_state_change",
-    "event_data": {
-        "door_open": true
-    },
-    "timestamp": "2024-03-20T10:30:00.000Z"
-}
-```
+**设备状态说明：**
+- `online`: 设备在线正常工作
+- `offline`: 设备离线
+- `error`: 设备出现错误
 
 ## 测试建议
 
@@ -211,8 +222,8 @@ DEVICE_TYPE=camera python app.py
 
 3. 观察控制器控制台输出，可以看到：
    - 设备心跳信息
-   - 随机生成的事件
-   - 设备状态变化
+   - 设备状态和事件数据
+   - 动态功耗变化
 
 4. 使用curl命令或其他HTTP客户端测试API接口
 

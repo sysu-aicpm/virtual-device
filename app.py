@@ -26,6 +26,7 @@ def init_device():
         device = device_class(str(uuid.uuid4()),config.HOST,config.PORT)
         device.start_ssdp_service()
         device.start_heartbeat(config.CONTROLLER_URL, config.HEARTBEAT_INTERVAL)
+        print(f"设备已初始化，状态: {device.status}")
     else:
         raise ValueError(f"不支持的设备类型: {config.DEVICE_TYPE}")
 
@@ -36,11 +37,18 @@ def generate_random_events():
             # 随机开关冰箱门
             if random.random() < 0.3:  # 30%的概率触发
                 device.door_open = not device.door_open
-                device.send_event(
-                    config.CONTROLLER_URL,
+                device.add_event(
                     "door_state_change",
                     {"door_open": device.door_open}
                 )
+                
+            # 随机温度变化
+            if random.random() < 0.2:  # 20%的概率触发
+                temp_change = random.uniform(-1, 1)
+                device.temperature += temp_change
+                # 限制温度范围
+                device.temperature = max(-20, min(10, device.temperature))
+                device.add_event("temperature_change", {"temperature": round(device.temperature, 1)})
         
         elif isinstance(device, Light):
             # 随机调节亮度
@@ -52,18 +60,34 @@ def generate_random_events():
             # 随机锁定/解锁
             if random.random() < 0.15:  # 15%的概率触发
                 current_state = device.locked
-                device.control("set_lock", {"state": "unlock" if current_state else "lock"})
+                new_state = "unlock" if current_state else "lock"
+                device.control("set_lock", {"state": new_state})
+            
+            # 随机电池电量变化
+            if random.random() < 0.1:  # 10%的概率触发
+                device.battery = max(0, device.battery - random.uniform(0.1, 0.5))
+                device.add_event("battery_level", {"battery": round(device.battery, 1)})
         
         elif isinstance(device, Camera):
             # 随机开始/停止录制
             if random.random() < 0.25:  # 25%的概率触发
                 current_state = device.recording
-                device.control("set_recording", {"state": "stop" if current_state else "start"})
+                new_state = "stop" if current_state else "start"
+                device.control("set_recording", {"state": new_state})
             # 随机切换分辨率
             elif random.random() < 0.1:  # 10%的概率触发
                 resolutions = ["720p", "1080p", "4k"]
                 new_resolution = random.choice(resolutions)
                 device.control("set_resolution", {"resolution": new_resolution})
+
+        # # 随机设备状态错误模拟
+        # if random.random() < 0.05:  # 5%的概率触发
+        #     if device.status == "online":
+        #         device.status = "error"
+        #         print(f"设备状态变为错误: {device.status}")
+        #     else:
+        #         device.status = "online"
+        #         print(f"设备状态恢复正常: {device.status}")
 
         # 随机等待5-15秒
         time.sleep(random.uniform(5, 15))
