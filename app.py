@@ -35,7 +35,7 @@ def generate_random_events():
     while True:
         if isinstance(device, Refrigerator):
             # 随机开关冰箱门
-            if random.random() < 0.3:  # 30%的概率触发
+            if random.random() < 0.003:  # 0.3%的概率触发
                 device.door_open = not device.door_open
                 device.add_event(
                     "door_state_change",
@@ -43,7 +43,7 @@ def generate_random_events():
                 )
                 
             # 随机温度变化
-            if random.random() < 0.2:  # 20%的概率触发
+            if random.random() < 0.003:  # 0.3%的概率触发
                 temp_change = random.uniform(-1, 1)
                 device.temperature += temp_change
                 # 限制温度范围
@@ -52,30 +52,30 @@ def generate_random_events():
         
         elif isinstance(device, Light):
             # 随机调节亮度
-            if random.random() < 0.2:  # 20%的概率触发
+            if random.random() < 0.003:  # 0.3%的概率触发
                 new_brightness = random.randint(0, 100)
                 device.control("set_brightness", {"brightness": new_brightness})
         
         elif isinstance(device, Lock):
             # 随机锁定/解锁
-            if random.random() < 0.15:  # 15%的概率触发
+            if random.random() < 0.003:  # 0.3%的概率触发
                 current_state = device.locked
                 new_state = "unlock" if current_state else "lock"
                 device.control("set_lock", {"state": new_state})
             
             # 随机电池电量变化
-            if random.random() < 0.1:  # 10%的概率触发
+            if random.random() < 0.003:  # 0.3%的概率触发
                 device.battery = max(0, device.battery - random.uniform(0.1, 0.5))
                 device.add_event("battery_level", {"battery": round(device.battery, 1)})
         
         elif isinstance(device, Camera):
             # 随机开始/停止录制
-            if random.random() < 0.25:  # 25%的概率触发
+            if random.random() < 0.003:  # 0.3%的概率触发
                 current_state = device.recording
                 new_state = "stop" if current_state else "start"
                 device.control("set_recording", {"state": new_state})
             # 随机切换分辨率
-            elif random.random() < 0.1:  # 10%的概率触发
+            elif random.random() < 0.003:  # 0.3%的概率触发
                 resolutions = ["720p", "1080p", "4k"]
                 new_resolution = random.choice(resolutions)
                 device.control("set_resolution", {"resolution": new_resolution})
