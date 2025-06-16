@@ -18,6 +18,19 @@ DEVICE_MAPPING = {
 }
 
 device:BaseDevice = None
+controller_url_set = threading.Event()
+
+@app.route('/set_controller_url', methods=['POST'])
+def set_controller_url():
+    global config
+    if not request.is_json:
+        return jsonify({"error": "需要JSON格式的请求"}), 400
+    url = request.json.get('controller_url')
+    if not url:
+        return jsonify({"error": "缺少controller_url参数"}), 400
+    config.CONTROLLER_URL = url
+    controller_url_set.set()
+    return jsonify({"success": True})
 
 def init_device():
     global device
@@ -25,7 +38,6 @@ def init_device():
     if device_class:
         device = device_class(str(uuid.uuid4()),config.HOST,config.PORT)
         device.start_ssdp_service()
-        device.start_heartbeat(config.CONTROLLER_URL, config.HEARTBEAT_INTERVAL)
         print(f"设备已初始化，状态: {device.status}")
     else:
         raise ValueError(f"不支持的设备类型: {config.DEVICE_TYPE}")
@@ -125,5 +137,14 @@ if __name__ == '__main__':
     event_thread = threading.Thread(target=generate_random_events)
     event_thread.daemon = True
     event_thread.start()
+    
+    def wait_and_start_heartbeat():
+        controller_url_set.wait()
+        device.start_heartbeat(config.CONTROLLER_URL, config.HEARTBEAT_INTERVAL)
+        print(f"已设置CONTROLLER_URL，开始心跳，状态: {device.status}")
+
+    heartbeat_thread = threading.Thread(target=wait_and_start_heartbeat)
+    heartbeat_thread.daemon = True
+    heartbeat_thread.start()
     
     app.run(host=config.HOST, port=config.PORT) 
